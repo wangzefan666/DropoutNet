@@ -1,3 +1,4 @@
+
 <div align="center">
     <img src="./logs/logobox.jpg"/>
 </div>
@@ -12,6 +13,9 @@ This repository contains full implementation of the DropoutNet model and include
 
 Furthermore per request, we also provide scripts and all necessary data to run the Citeulike cold-start experiment. See section on Citeulike below for further details as well as links to the packaged data.
 
+
+<a name="env"/>
+
 ## Environment
 The python code is developed and tested on the following environment:
 * python 2.7
@@ -20,6 +24,8 @@ The python code is developed and tested on the following environment:
 * 128GB ram (around 30GB is required)
 * Titan X (Pascal) 12GB, driver ver. 384.81
 * CUDA 9 and CUDNN 7
+
+<a name="dataset"/>
 
 ## Dataset
 
@@ -72,11 +78,9 @@ Notes:
 * By default, training happens on GPU while inference and batch generation is on CPU.
 
 ## Validation Curves
-<div align="center">
-    <img src="./logs/warm.png"/>
-    <img src="./logs/cold_user.png"/>
-    <img src="./logs/cold_item.png"/>
-</div>
+![](./logs/warm.png)
+![](./logs/cold_user.png)
+![](./logs/cold_item.png)
 
 ## Citeulike
 In addition to Recsys, we also provide pipeline to run the publicly available Citeulike data. Note that, as mentioned in the paper, we evaluate cold start the same way as the CTR paper while the warm start evaluation is modified. For convenience, we have proivded our evaluation split for both cold and warm start, item features, as well as the WMF user item preference latent vectors available [here](https://s3.amazonaws.com/public.layer6.ai/DropoutNet/citeu.tar.gz).
@@ -86,7 +90,6 @@ The citeulike warm and cold models are trained separately as their validation se
 
 Point `--data-dir` to your extracted `eval` folder after extracting `citeu.tar.gz`. Sample training runs with respective validation performance are shown below per 1000 updates.
 
-<div align="center">
-    <img src="./logs/dropoutnet_citeu_cold.png"/>
-    <img src="./logs/dropoutnet_citeu_warm.png"/>
-</div>
+![](./logs/dropoutnet_citeu_cold.png)
+![](./logs/dropoutnet_citeu_warm.png)
+
