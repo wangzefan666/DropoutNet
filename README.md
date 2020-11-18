@@ -1,12 +1,8 @@
 
-<div align="center">
-    <img src="./logs/logobox.jpg"/>
-</div>
+![](./logs/logobox.jpg)
 
 ## NeurIPS'17 DropoutNet: Addressing Cold Start in Recommender Systems
 Authors: [Maksims Volkovs](http://www.cs.toronto.edu/~mvolkovs), [Guangwei Yu](http://www.cs.toronto.edu/~guangweiyu), Tomi Poutanen  [[paper](http://www.cs.toronto.edu/~mvolkovs/nips2017_deepcf.pdf)]
-
-<a name="intro"/>
 
 ## Introduction
 This repository contains full implementation of the DropoutNet model and includes both training and evaluation routines. We also provide the [ACM RecSys 2017 Challenge](http://2017.recsyschallenge.com) dataset that we further split into three subsets for warm start, user cold start and item cold start evaluation. The aim is to train a *single* model that can be applied to all three tasks and we report validation accuracy on each task during training.
@@ -18,7 +14,7 @@ Furthermore per request, we also provide scripts and all necessary data to run t
 
 ## Environment
 The python code is developed and tested on the following environment:
-* python 2.7
+* python 3.6
 * tensorflow-gpu 1.3.0
 * Intel Xeon E5-2630
 * 128GB ram (around 30GB is required)
