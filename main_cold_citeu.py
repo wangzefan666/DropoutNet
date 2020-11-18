@@ -7,12 +7,13 @@ from sklearn import datasets
 import data
 import model
 import scipy.sparse as sp
-
+from tqdm import tqdm
 import argparse
 import os
 
 n_users = 5551 + 1
 n_items = 16980 + 1
+
 
 def main():
     data_path = args.data_dir
@@ -81,8 +82,6 @@ def main():
     with tf.device(args.inf_device):
         dropout_net.build_predictor(recall_at, n_scores_user)
 
-    if args.progress:
-        from tqdm import tqdm
     with tf.Session(config=config) as sess:
         tf_saver = None if _tf_ckpt_file is None else tf.train.Saver()
         train_writer = None if tb_log_path is None else tf.summary.FileWriter(
@@ -123,12 +122,10 @@ def main():
                 n_targets = len(target_scores)
                 perm = np.random.permutation(n_targets)
                 n_targets = min(n_targets, max_data_per_step)
-                data_batch = [(n, min(n + data_batch_size, n_targets)) for n in xrange(0, n_targets, data_batch_size)]
+                data_batch = [(n, min(n + data_batch_size, n_targets)) for n in range(0, n_targets, data_batch_size)]
                 f_batch = 0
                 gen = data_batch
-                if args.progress:
-                    gen = tqdm(gen)
-                for (start, stop) in gen:
+                for (start, stop) in tqdm(gen):
                     batch_perm = perm[start:stop]
                     batch_users = target_users[batch_perm]
                     batch_items = target_items[batch_perm]
@@ -182,13 +179,13 @@ def main():
                     timer.toc('%d [%d]b [%d]tot f=%.2f best[%d]' % (
                         n_step, len(data_batch), n_batch_trained, f_batch, best_step
                     )).tic()
-                    print ('\t\t\t'+' '.join([('@'+str(i)).ljust(6) for i in recall_at]))
+                    print('\t\t\t' + ' '.join([('@' + str(i)).ljust(6) for i in recall_at]))
                     print('cold start\t%s' % (
                         ' '.join(['%.4f' % i for i in recall_cold]),
                     ))
                     print('best epoch[%d]\t%s' % (
                         best_step,
-                        ' '.join(['%.4f' % i for i in best_cold] ),
+                        ' '.join(['%.4f' % i for i in best_cold]),
                     ))
                     summaries = []
                     for i, k in enumerate(recall_at):
@@ -200,18 +197,20 @@ def main():
                     if train_writer is not None:
                         train_writer.add_summary(recall_summary, n_step)
 
+
 def tfidf(R):
     row = R.shape[0]
     col = R.shape[1]
     Rbin = R.copy()
-    Rbin[Rbin!=0]=1.0
+    Rbin[Rbin != 0] = 1.0
     R = R + Rbin
     tf = R.copy()
     tf.data = np.log(tf.data)
-    idf = np.sum(Rbin,0)
-    idf = np.log(row/(1+idf))
-    idf = sp.spdiags(idf,0,col,col)
+    idf = np.sum(Rbin, 0)
+    idf = np.log(row / (1 + idf))
+    idf = sp.spdiags(idf, 0, col, col)
     return tf * idf
+
 
 def load_data(data_path):
     timer = utils.timer(name='main').tic()
@@ -227,11 +226,9 @@ def load_data(data_path):
     dat = {}
     # load preference data
     timer.tic()
-#    u_pref = np.fromfile(u_file, dtype='>f4').reshape(n_users, 200)
-#    v_pref = np.fromfile(v_file, dtype='>f4').reshape(n_items, 200)
 
-    u_pref = np.loadtxt(u_file).reshape(n_users,200)
-    v_pref = np.loadtxt(v_file).reshape(n_items,200)
+    u_pref = np.loadtxt(u_file).reshape(n_users, 200)
+    v_pref = np.loadtxt(v_file).reshape(n_items, 200)
 
     dat['u_pref'] = u_pref
     dat['v_pref'] = v_pref
@@ -251,7 +248,7 @@ def load_data(data_path):
     item_content = tfidf(item_content)
 
     from sklearn.utils.extmath import randomized_svd
-    u,s,_ = randomized_svd(item_content, n_components=300, n_iter=5)
+    u, s, _ = randomized_svd(item_content, n_components=300, n_iter=5)
     item_content = u * s
     _, item_content = utils.prep_standardize(item_content)
 
@@ -263,40 +260,35 @@ def load_data(data_path):
 
     # load split
     timer.tic()
-    train = pd.read_csv(train_file, delimiter=",", header=-1, dtype=np.int32).values.ravel().view(
+    train = pd.read_csv(train_file, delimiter=",", header=None, dtype=np.int32).values.ravel().view(
         dtype=[('uid', np.int32), ('iid', np.int32), ('inter', np.int32)])
     dat['user_indices'] = np.unique(train['uid'])
     timer.toc('read train triplets %s' % train.shape).tic()
 
     dat['eval_cold'] = data.load_eval_data(test_cold_file, test_cold_iid_file, name='eval_cold', cold=True,
-                                           train_data=train,citeu=True)
+                                           train_data=train, citeu=True)
     return dat
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Demo script to run DropoutNet on RecSys data",
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--data-dir', type=str, required=True, help='path to eval in the downloaded folder')
-
+    parser = argparse.ArgumentParser(description="Demo script to run DropoutNet on RecSys data")
+    parser.add_argument('--data-dir', type=str, default='./citeu', help='path to eval in the downloaded folder')
     parser.add_argument('--model-device', type=str, default='/gpu:0', help='device to use for training')
     parser.add_argument('--inf-device', type=str, default='/cpu:0', help='device to use for inference')
     parser.add_argument('--checkpoint-path', type=str, default=None,
                         help='path to dump checkpoint data from TensorFlow')
     parser.add_argument('--tb-log-path', type=str, default=None,
                         help='path to dump TensorBoard logs')
-    parser.add_argument('--model-select', nargs='+', type=int,
-                        default=[200],
+    parser.add_argument('--model-select', nargs='+', type=int, default=[200],
                         help='specify the fully-connected architecture, starting from input,'
-                             ' numbers indicate numbers of hidden units',
-                        )
+                             ' numbers indicate numbers of hidden units')
     parser.add_argument('--rank', type=int, default=200, help='output rank of latent model')
     parser.add_argument('--dropout', type=float, default=0.5, help='DropoutNet dropout')
     parser.add_argument('--eval-every', type=int, default=1, help='evaluate every X user-batch')
     parser.add_argument('--lr', type=float, default=0.005, help='starting learning rate')
-    parser.add_argument('--progress', action='store_true', help='show tqdm progress (requires tqdm) during training')
 
-    args = parser.parse_args()
     args, _ = parser.parse_known_args()
     for key in vars(args):
         print(key + ":" + str(vars(args)[key]))
+
     main()

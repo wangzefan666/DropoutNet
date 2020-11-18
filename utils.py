@@ -103,24 +103,6 @@ def prep_standardize(x):
     return scaler, x_scaled
 
 
-def prep_standardize_dense(x):
-    """
-    takes dense input and compute standardized version
-
-    Note:
-        cap at 5 std
-
-    :param x: 2D numpy data array to standardize (column-wise)
-    :return: the object to perform scale (stores mean/std) for inference, as well as the scaled x
-    """
-    scaler = prep.StandardScaler().fit(x)
-    x_scaled = scaler.transform(x)
-    x_scaled[x_scaled > 5] = 5
-    x_scaled[x_scaled < -5] = -5
-    x_scaled[np.absolute(x_scaled) < 1e-5] = 0
-    return scaler, x_scaled
-
-
 def batch_eval_recall(_sess, tf_eval, eval_feed_dict, recall_k, eval_data):
     """
     given EvalData and DropoutNet compute graph in TensorFlow, runs batch evaluation
@@ -134,9 +116,7 @@ def batch_eval_recall(_sess, tf_eval, eval_feed_dict, recall_k, eval_data):
     """
     tf_eval_preds_batch = []
     for (batch, (eval_start, eval_stop)) in enumerate(eval_data.eval_batch):
-        tf_eval_preds = _sess.run(tf_eval,
-                                  feed_dict=eval_feed_dict(
-                                      batch, eval_start, eval_stop, eval_data))
+        tf_eval_preds = _sess.run(tf_eval, feed_dict=eval_feed_dict(batch, eval_start, eval_stop, eval_data))
         tf_eval_preds_batch.append(tf_eval_preds)
     tf_eval_preds = np.concatenate(tf_eval_preds_batch)
     tf.local_variables_initializer().run()
@@ -156,6 +136,8 @@ def batch_eval_recall(_sess, tf_eval, eval_feed_dict, recall_k, eval_data):
         x.rows = preds_k
         x.data = np.ones_like(preds_k)
 
-        z = y.multiply(x)
+        print(y.shape)
+        print(x.shape)
+        z = np.multiply(y, x)
         recall.append(np.mean(np.divide((np.sum(z, 1)), np.sum(y, 1))))
     return recall

@@ -15,22 +15,14 @@ def dense_batch_fc_tanh(x, units, phase, scope, do_norm=False):
     """
 
     with tf.variable_scope(scope):
+
         init = tf.truncated_normal_initializer(stddev=0.01)
-        h1_w = tf.get_variable(scope + '_w',
-                               shape=[x.get_shape().as_list()[1], units],
-                               initializer=init)
-        h1_b = tf.get_variable(scope + '_b',
-                               shape=[1, units],
-                               initializer=tf.zeros_initializer())
+        h1_w = tf.get_variable(scope + '_w', shape=[x.get_shape().as_list()[1], units], initializer=init)
+        h1_b = tf.get_variable(scope + '_b', shape=[1, units], initializer=tf.zeros_initializer())
         h1 = tf.matmul(x, h1_w) + h1_b
+
         if do_norm:
-            h2 = tf.contrib.layers.batch_norm(
-                h1,
-                decay=0.9,
-                center=True,
-                scale=True,
-                is_training=phase,
-                scope=scope + '_bn')
+            h2 = tf.contrib.layers.batch_norm(h1, decay=0.9, center=True, scale=True, is_training=phase, scope=scope + '_bn')
             return tf.nn.tanh(h2, scope + '_tanh')
         else:
             return tf.nn.tanh(h1, scope + '_tanh')
@@ -103,39 +95,40 @@ class DeepCF:
 
         self.Uin = tf.placeholder(tf.float32, shape=[None, self.rank_in], name='U_in_raw')
         self.Vin = tf.placeholder(tf.float32, shape=[None, self.rank_in], name='V_in_raw')
-        if self.phi_u_dim>0:
+
+        if self.phi_u_dim > 0:
             self.Ucontent = tf.placeholder(tf.float32, shape=[None, self.phi_u_dim], name='U_content')
             u_concat = tf.concat([self.Uin, self.Ucontent], 1)
         else:
             u_concat = self.Uin
 
-        if self.phi_v_dim>0:
+        if self.phi_v_dim > 0:
             self.Vcontent = tf.placeholder(tf.float32, shape=[None, self.phi_v_dim], name='V_content')
             v_concat = tf.concat([self.Vin, self.Vcontent], 1)
         else:
             v_concat = self.Vin
 
-        print ('\tu_concat.shape=%s' % str(u_concat.get_shape()))
-        print ('\tv_concat.shape=%s' % str(v_concat.get_shape()))
+        print('\tu_concat.shape=%s' % str(u_concat.get_shape()))
+        print('\tv_concat.shape=%s' % str(v_concat.get_shape()))
 
+        # get fu and fv
         u_last = u_concat
         v_last = v_concat
         for ihid, hid in enumerate(self.model_select):
             u_last = dense_batch_fc_tanh(u_last, hid, self.phase, 'user_layer_%d' % (ihid + 1), do_norm=True)
             v_last = dense_batch_fc_tanh(v_last, hid, self.phase, 'item_layer_%d' % (ihid + 1), do_norm=True)
 
-        with tf.variable_scope("self.U_embedding"):
-            u_emb_w = tf.Variable(tf.truncated_normal([u_last.get_shape().as_list()[1], self.rank_out], stddev=0.01),
-                                  name='u_emb_w')
+        # get hat(U) and hat(V)
+        with tf.variable_scope("U_embedding"):
+            u_emb_w = tf.Variable(tf.truncated_normal([u_last.get_shape().as_list()[1], self.rank_out], stddev=0.01), name='u_emb_w')
             u_emb_b = tf.Variable(tf.zeros([1, self.rank_out]), name='u_emb_b')
             self.U_embedding = tf.matmul(u_last, u_emb_w) + u_emb_b
-
         with tf.variable_scope("V_embedding"):
-            v_emb_w = tf.Variable(tf.truncated_normal([v_last.get_shape().as_list()[1], self.rank_out], stddev=0.01),
-                                  name='v_emb_w')
+            v_emb_w = tf.Variable(tf.truncated_normal([v_last.get_shape().as_list()[1], self.rank_out], stddev=0.01), name='v_emb_w')
             v_emb_b = tf.Variable(tf.zeros([1, self.rank_out]), name='v_emb_b')
             self.V_embedding = tf.matmul(v_last, v_emb_w) + v_emb_b
 
+        # loss
         with tf.variable_scope("loss"):
             preds = tf.multiply(self.U_embedding, self.V_embedding)
             self.preds = tf.reduce_sum(preds, 1)
@@ -157,16 +150,15 @@ class DeepCF:
         :param num_candidates: number of candidates
         :return:
         """
-        self.eval_trainR = tf.sparse_placeholder(
-            dtype=tf.float32, shape=[None, None], name='trainR_sparse_CPU')
+        self.eval_trainR = tf.sparse_placeholder(dtype=tf.float32, shape=[None, None], name='trainR_sparse_CPU')
 
         with tf.variable_scope("eval"):
             embedding_prod_cold = tf.matmul(self.U_embedding, self.V_embedding, transpose_b=True, name='pred_all_items')
             embedding_prod_warm = tf.sparse_add(embedding_prod_cold, self.eval_trainR)
-            _, self.eval_preds_cold = tf.nn.top_k(embedding_prod_cold, k=recall_at[-1], sorted=True,
-                                                  name='topK_net_cold')
-            _, self.eval_preds_warm = tf.nn.top_k(embedding_prod_warm, k=recall_at[-1], sorted=True,
-                                                  name='topK_net_warm')
+
+            _, self.eval_preds_cold = tf.nn.top_k(embedding_prod_cold, k=recall_at[-1], sorted=True, name='topK_net_cold')
+            _, self.eval_preds_warm = tf.nn.top_k(embedding_prod_warm, k=recall_at[-1], sorted=True, name='topK_net_warm')
+
         with tf.variable_scope("select_targets"):
             self.U_pref_tf = tf.placeholder(tf.float32, shape=[None, self.rank_in], name='u_pref')
             self.V_pref_tf = tf.placeholder(tf.float32, shape=[None, self.rank_in], name='v_pref')
@@ -182,8 +174,7 @@ class DeepCF:
         with tf.variable_scope("latent_eval"):
             preds_pref_latent_warm = tf.sparse_add(preds_pref, self.eval_trainR)
             _, self.tf_latent_topk_cold = tf.nn.top_k(preds_pref, k=recall_at[-1], sorted=True, name='topK_latent_cold')
-            _, self.tf_latent_topk_warm = tf.nn.top_k(preds_pref_latent_warm, k=recall_at[-1], sorted=True,
-                                                      name='topK_latent_warm')
+            _, self.tf_latent_topk_warm = tf.nn.top_k(preds_pref_latent_warm, k=recall_at[-1], sorted=True, name='topK_latent_warm')
 
     def get_eval_dict(self, _i, _eval_start, _eval_finish, eval_data):
         """
@@ -202,30 +193,9 @@ class DeepCF:
             self.Vcontent: eval_data.V_content_test,
             self.phase: 0
         }
-        if self.Ucontent!=None: 
-            _eval_dict[self.Ucontent]= eval_data.U_content_test[_eval_start:_eval_finish, :]
+        if self.Ucontent is not None:
+            _eval_dict[self.Ucontent] = eval_data.U_content_test[_eval_start:_eval_finish, :]
         if not eval_data.is_cold:
             _eval_dict[self.eval_trainR] = eval_data.tf_eval_train[_i]
         return _eval_dict
 
-    def get_eval_dict_latent(self, _i, _eval_start, _eval_finish, eval_data, u_pref, v_pref):
-        """
-        packaging method to iterate evaluation data, select from start:finish
-        uses preference input
-        should be passed directly to batch method
-
-        :param _i: slice id
-        :param _eval_start: integer beginning of slice
-        :param _eval_finish: integer end of slice
-        :param eval_data: package EvalData obj
-        :param u_pref: user latent input to slice
-        :param v_pref: item latent input to slice
-        :return:
-        """
-        _eval_dict = {
-            self.U_pref_tf: u_pref[eval_data.test_user_ids[_eval_start:_eval_finish], :],
-            self.V_pref_tf: v_pref[eval_data.test_item_ids, :]
-        }
-        if not eval_data.is_cold:
-            _eval_dict[self.eval_trainR] = eval_data.tf_eval_train[_i]
-        return _eval_dict

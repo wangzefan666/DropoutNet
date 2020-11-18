@@ -130,7 +130,7 @@ def main():
                 n_targets = len(target_scores)
                 perm = np.random.permutation(n_targets)
                 n_targets = min(n_targets, max_data_per_step)
-                data_batch = [(n, min(n + data_batch_size, n_targets)) for n in xrange(0, n_targets, data_batch_size)]
+                data_batch = [(n, min(n + data_batch_size, n_targets)) for n in range(0, n_targets, data_batch_size)]
                 f_batch = 0
                 for (start, stop) in data_batch:
                     batch_perm = perm[start:stop]
@@ -275,21 +275,17 @@ def load_data(data_path):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Demo script to run DropoutNet on RecSys data",
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description="Demo script to run DropoutNet on RecSys data")
     parser.add_argument('--data-dir', type=str, required=True, help='path to eval in the downloaded folder')
 
     parser.add_argument('--model-device', type=str, default='/gpu:0', help='device to use for training')
     parser.add_argument('--inf-device', type=str, default='/cpu:0', help='device to use for inference')
     parser.add_argument('--checkpoint-path', type=str, default=None,
                         help='path to dump checkpoint data from TensorFlow')
-    parser.add_argument('--tb-log-path', type=str, default=None,
-                        help='path to dump TensorBoard logs')
-    parser.add_argument('--model-select', nargs='+', type=int,
-                        default=[800, 400],
+    parser.add_argument('--tb-log-path', type=str, default=None, help='path to dump TensorBoard logs')
+    parser.add_argument('--model-select', nargs='+', type=int, default=[800, 400],
                         help='specify the fully-connected architecture, starting from input,'
-                             ' numbers indicate numbers of hidden units',
-                        )
+                             ' numbers indicate numbers of hidden units',)
     parser.add_argument('--rank', type=int, default=200, help='output rank of latent model')
     parser.add_argument('--dropout', type=float, default=0.5, help='DropoutNet dropout')
     parser.add_argument('--eval-every', type=int, default=2, help='evaluate every X user-batch')

@@ -1,11 +1,8 @@
 
-<p align="center">
-<a href="https://layer6.ai/"><img src="https://github.com/layer6ai-labs/DropoutNet/blob/master/logs/logobox.jpg" width="180"></a>
-</p>
+![](./logs/logobox.jpg)
 
 ## NeurIPS'17 DropoutNet: Addressing Cold Start in Recommender Systems
-Authors: [Maksims Volkovs](http://www.cs.toronto.edu/~mvolkovs), [Guangwei Yu](http://www.cs.toronto.edu/~guangweiyu), Tomi Poutanen  
-[[paper](http://www.cs.toronto.edu/~mvolkovs/nips2017_deepcf.pdf)]
+Authors: [Maksims Volkovs](http://www.cs.toronto.edu/~mvolkovs), [Guangwei Yu](http://www.cs.toronto.edu/~guangweiyu), Tomi Poutanen  [[paper](http://www.cs.toronto.edu/~mvolkovs/nips2017_deepcf.pdf)]
 
 <a name="intro"/>
 
@@ -61,8 +58,6 @@ where INTERACTION_TYPE is one of:
   5: recruiter interest
 ```
 
-<a name="demo"/>
-
 ## Running training code
 
 1. Download the dataset, extract and keep the directory structure.
@@ -76,17 +71,14 @@ where INTERACTION_TYPE is one of:
 During training recall@50,100,...,500 accuracy is shown every 50K updates for warm start, user cold start and item cold start validation sets.
 
 Notes:
-
 * Make sure `--data-dir` points to the `eval/` folder, not the root
 * On our environment (described above) 50K updates takes approximately 14 minutes with the default GPU/CPU setting.
 * By default, training happens on GPU while inference and batch generation is on CPU.
 
 ## Validation Curves
-<p align="center">
-<img src="https://github.com/layer6ai-labs/DropoutNet/blob/master/logs/warm.png" width="500">
-<img src="https://github.com/layer6ai-labs/DropoutNet/blob/master/logs/cold_user.png" width="500">
-<img src="https://github.com/layer6ai-labs/DropoutNet/blob/master/logs/cold_item.png" width="500">
-</p>
+![](./logs/warm.png)
+![](./logs/cold_user.png)
+![](./logs/cold_item.png)
 
 ## Citeulike
 In addition to Recsys, we also provide pipeline to run the publicly available Citeulike data. Note that, as mentioned in the paper, we evaluate cold start the same way as the CTR paper while the warm start evaluation is modified. For convenience, we have proivded our evaluation split for both cold and warm start, item features, as well as the WMF user item preference latent vectors available [here](https://s3.amazonaws.com/public.layer6.ai/DropoutNet/citeu.tar.gz).
@@ -96,8 +88,6 @@ The citeulike warm and cold models are trained separately as their validation se
 
 Point `--data-dir` to your extracted `eval` folder after extracting `citeu.tar.gz`. Sample training runs with respective validation performance are shown below per 1000 updates.
 
-<p align="center">
-<img src="https://github.com/layer6ai-labs/DropoutNet/blob/master/logs/dropoutnet_citeu_cold.png" width="500">
-<img src="https://github.com/layer6ai-labs/DropoutNet/blob/master/logs/dropoutnet_citeu_warm.png" width="500">
-</p>
+![](./logs/dropoutnet_citeu_cold.png)
+![](./logs/dropoutnet_citeu_warm.png)
 

@@ -13,13 +13,13 @@ def load_eval_data(test_file, test_id_file, name, cold, train_data, citeu=False)
     timer = utils.timer()
     with open(test_id_file) as f:
         test_item_ids = [int(line) for line in f]
-        test_data = pd.read_csv(test_file, delimiter=",", header=-1, dtype=np.int32).values.ravel()
+        test_data = pd.read_csv(test_file, delimiter=",", header=None, dtype=np.int32).values.ravel()
         if citeu:
             test_data = test_data.view(
-            dtype=[('uid', np.int32), ('iid', np.int32), ('inter', np.int32)])
+                dtype=[('uid', np.int32), ('iid', np.int32), ('inter', np.int32)])
         else:
             test_data = test_data.view(
-            dtype=[('uid', np.int32), ('iid', np.int32), ('inter', np.int32), ('date', np.int32)])
+                dtype=[('uid', np.int32), ('iid', np.int32), ('inter', np.int32), ('date', np.int32)])
         timer.toc('read %s triplets %s' % (name, test_data.shape)).tic()
         eval_data = EvalData(
             test_data,
@@ -114,13 +114,12 @@ class EvalData:
         self.V_content_test = item_content[self.test_item_ids, :]
         if scipy.sparse.issparse(self.V_content_test):
             self.V_content_test = self.V_content_test.todense()
-        if user_content!=None:
+        if user_content is not None:
             self.U_content_test = user_content[self.test_user_ids, :]
             if scipy.sparse.issparse(self.U_content_test):
                 self.U_content_test = self.U_content_test.todense()
         eval_l = self.R_test_inf.shape[0]
-        self.eval_batch = [(x, min(x + eval_run_batchsize, eval_l)) for x
-                           in xrange(0, eval_l, eval_run_batchsize)]
+        self.eval_batch = [(x, min(x + eval_run_batchsize, eval_l)) for x in range(0, eval_l, eval_run_batchsize)]
 
         self.tf_eval_train = []
         self.tf_eval_test = []
@@ -139,11 +138,7 @@ class EvalData:
 
     def get_stats_string(self):
         return ('\tn_test_users:[%d]\n\tn_test_items:[%d]' % (len(self.test_user_ids), len(self.test_item_ids))
-                + '\n\tR_train_inf: %s' % (
-                    'no R_train_inf for cold' if self.is_cold else 'shape=%s nnz=[%d]' % (
-                        str(self.R_train_inf.shape), len(self.R_train_inf.nonzero()[0])
-                    )
-                )
+                + '\n\tR_train_inf: %s' % ('no R_train_inf for cold' if self.is_cold else 'shape=%s nnz=[%d]' % (
+                        str(self.R_train_inf.shape), len(self.R_train_inf.nonzero()[0])))
                 + '\n\tR_test_inf: shape=%s nnz=[%d]' % (
-                    str(self.R_test_inf.shape), len(self.R_test_inf.nonzero()[0])
-                ))
+                    str(self.R_test_inf.shape), len(self.R_test_inf.nonzero()[0])))
